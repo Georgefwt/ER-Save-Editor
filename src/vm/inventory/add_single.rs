@@ -333,7 +333,7 @@ impl InventoryViewModel {
                     // Bail out early if there's no more space in inventory
                     if amount != 0 {
                         // Change item quantity
-                        self.increase_item_quantity(id, free_space, 0, false);
+                        self.increase_item_quantity(id, amount, 0, false);
 
                         // Update Log
                         self.log.insert(0, format!("> Added {} {} to held inventory", amount, name));
