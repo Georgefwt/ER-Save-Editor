@@ -102,9 +102,15 @@ impl Read for PlayerCoords {
         let mut player_coords = PlayerCoords::default();
         player_coords.player_coords = (br.read_f32()?, br.read_f32()?, br.read_f32()?);
         player_coords.map_id.copy_from_slice(br.read_bytes(4)?);
-        let _0x11 = br.read_bytes(0x11)?;
+        // Preserve unknown bytes between coordinate blocks.
+        player_coords
+            ._0x11
+            .copy_from_slice(br.read_bytes(0x11)?);
         player_coords.player_coords2 = (br.read_f32()?, br.read_f32()?, br.read_f32()?);
-        let _0x10: &[u8] = br.read_bytes(0x10)?;
+        // Preserve trailing unknown bytes after the second coordinate block.
+        player_coords
+            ._0x10
+            .copy_from_slice(br.read_bytes(0x10)?);
         Ok(player_coords)
     }
 }
