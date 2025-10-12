@@ -124,6 +124,8 @@ pub mod vm {
         fn update_stats(&self, save_type: &mut SaveType, index: usize) {
             let stats_vm = &self.slots[index].stats_vm;
 
+            save_type.set_character_arche_type(index, u8::from(stats_vm.arche_type));
+
             let level = stats_vm.vigor
                 + stats_vm.mind
                 + stats_vm.endurance
