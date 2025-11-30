@@ -548,6 +548,9 @@ pub mod vm {
             // Update gaitem item data
             let gaitem_data = inventory_vm.gaitem_data.clone();
             save_type.set_gaitem_item_data(index, gaitem_data);
+
+            // Update gestures
+            save_type.set_gesture_game_data(index, inventory_vm.gesture_game_data.clone());
         }
     }
 }
