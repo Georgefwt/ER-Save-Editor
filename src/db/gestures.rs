@@ -30,7 +30,7 @@ pub const GESTURES: &[GestureInfo] = &[
     GestureInfo { index: 22, id: 105, name: "By My Sword" },
     GestureInfo { index: 23, id: 107, name: "Hoslow's Oath" },
     GestureInfo { index: 24, id: 109, name: "Fire Spur Me" },
-    GestureInfo { index: 25, id: 0, name: "The Carian Oath (Cut)" }, // -1 in Lua, assuming 0 or skip
+    GestureInfo { index: 25, id: 111, name: "The Carian Oath (Cut)" }, // -1 in Lua, assuming 0 or skip
     GestureInfo { index: 26, id: 121, name: "Bravo!" },
     GestureInfo { index: 27, id: 141, name: "Jump for Joy" },
     GestureInfo { index: 28, id: 143, name: "Triumphant Delight" },
@@ -43,7 +43,7 @@ pub const GESTURES: &[GestureInfo] = &[
     GestureInfo { index: 35, id: 187, name: "Sitting Sideways" },
     GestureInfo { index: 36, id: 189, name: "Dozing Cross-Legged" },
     GestureInfo { index: 37, id: 191, name: "Spread Out" },
-    GestureInfo { index: 38, id: 0, name: "Fetal Position (Cut)" },
+    GestureInfo { index: 38, id: 193, name: "Fetal Position (Cut)" },
     GestureInfo { index: 39, id: 195, name: "Balled Up" },
     GestureInfo { index: 40, id: 197, name: "What Do You Want?" },
     GestureInfo { index: 41, id: 201, name: "Prayer" },
@@ -55,13 +55,13 @@ pub const GESTURES: &[GestureInfo] = &[
     GestureInfo { index: 47, id: 213, name: "Golden Order Totality" },
     GestureInfo { index: 48, id: 217, name: "The Ring (Pre-order)" }, // Index 49 in Lua (1-based) -> 48 Rust. ID 217
     GestureInfo { index: 49, id: 219, name: "The Ring" }, // Index 50 in Lua -> 49 Rust. ID 219
-    GestureInfo { index: 50, id: 0, name: "?GoodsName? (Cut)" },
+    GestureInfo { index: 50, id: 221, name: "?GoodsName? (Cut)" },
     
     // DLC Gestures appended?
     // Lua: gesturesDLC1
     GestureInfo { index: 51, id: 223, name: "May the Best Win" },
     GestureInfo { index: 52, id: 225, name: "The Two Fingers" },
-    GestureInfo { index: 53, id: 0, name: "Ring of Miquella (Pre-order)" }, // ID 227 if owned?
+    GestureInfo { index: 53, id: 227, name: "Ring of Miquella (Pre-order)" }, // ID 227 if owned?
     GestureInfo { index: 54, id: 229, name: "Let Us Go Together" },
     GestureInfo { index: 55, id: 231, name: "O Mother" },
     GestureInfo { index: 56, id: 233, name: "Ring of Miquella" }, // ID 233

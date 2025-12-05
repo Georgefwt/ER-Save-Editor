@@ -41,7 +41,6 @@ pub fn add(ui: &mut Ui, vm:&mut ViewModel) {
             let ashofwar = uis[3].add_sized([uis[3].available_width(), 40.], egui::Button::new("Ash of War"));
             let talismans = uis[4].add_sized([uis[4].available_width(), 40.], egui::Button::new("Talismans"));
             let gestures = uis[5].add_sized([uis[5].available_width(), 40.], egui::Button::new("Gestures"));
-            let gestures = uis[5].add_sized([uis[5].available_width(), 40.], egui::Button::new("Gestures"));
 
             if common_items.clicked() {
                 // Update route for single item add
