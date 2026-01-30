@@ -477,6 +477,18 @@ pub mod save {
             }
         }
 
+        pub fn set_gesture_game_data(&mut self, index: usize, gesture_game_data: Vec<i32>) {
+            match self {
+                SaveType::Unknown => panic!("Why are we here?"),
+                SaveType::PC(pc_save) => {
+                    pc_save.save_slots[index].save_slot.gesture_game_data = gesture_game_data;
+                }
+                SaveType::PlayStation(ps_save) => {
+                    ps_save.save_slots[index].gesture_game_data = gesture_game_data;
+                }
+            }
+        }
+
         pub fn set_quickslot_item(&mut self, slot_index: usize, quickslot_index: usize,  gaitem_handle: u32, item_id: u32, equip_index: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
