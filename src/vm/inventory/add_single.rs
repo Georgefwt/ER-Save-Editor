@@ -609,12 +609,14 @@ impl InventoryViewModel {
         // Add item to storage
         // Note: The actual acquisition sort ID stored in the save file is (next_acquisition_sort_id << 1) | new_flag.
         // The lowest bit indicates "new item" status (1 = new/unviewed, 0 = viewed).
+        // Items in storage box (storage_index = 1) are always "viewed" since player had to see them first.
+        let new_flag = if storage_index == 0 { 1 } else { 0 };
         items[index as usize] = InventoryItemViewModel{
             ga_item_handle: gaitem_handle,
             item_id: id,
             equip_index: equip_index as u32,
             quantity: quantity,
-            inventory_index: (acquisiton_sort_order_index << 1) | 1,
+            inventory_index: (acquisiton_sort_order_index << 1) | new_flag,
             item_name: name,
             r#type: r#type
         };
@@ -649,12 +651,14 @@ impl InventoryViewModel {
         // Add item to storage
         // Note: The actual acquisition sort ID stored in the save file is (next_acquisition_sort_id << 1) | new_flag.
         // The lowest bit indicates "new item" status (1 = new/unviewed, 0 = viewed).
+        // Items in storage box (storage_index = 1) are always "viewed" since player had to see them first.
+        let new_flag = if storage_index == 0 { 1 } else { 0 };
         items[index as usize] = InventoryItemViewModel{
             ga_item_handle: gaitem_handle,
             item_id: id,
             equip_index: equip_index as u32,
             quantity: quantity,
-            inventory_index: (acquisiton_sort_order_index << 1) | 1,
+            inventory_index: (acquisiton_sort_order_index << 1) | new_flag,
             item_name: name,
             r#type: r#type
         };
