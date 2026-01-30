@@ -607,12 +607,14 @@ impl InventoryViewModel {
         let acquisiton_sort_order_index = storage.next_acquisition_sort_order_index;
 
         // Add item to storage
+        // Note: The actual acquisition sort ID stored in the save file is (next_acquisition_sort_id << 1) | new_flag.
+        // The lowest bit indicates "new item" status (1 = new/unviewed, 0 = viewed).
         items[index as usize] = InventoryItemViewModel{
             ga_item_handle: gaitem_handle,
             item_id: id,
             equip_index: equip_index as u32,
             quantity: quantity,
-            inventory_index: acquisiton_sort_order_index,
+            inventory_index: (acquisiton_sort_order_index << 1) | 1,
             item_name: name,
             r#type: r#type
         };
@@ -645,12 +647,14 @@ impl InventoryViewModel {
         let acquisiton_sort_order_index = storage.next_acquisition_sort_order_index;
 
         // Add item to storage
+        // Note: The actual acquisition sort ID stored in the save file is (next_acquisition_sort_id << 1) | new_flag.
+        // The lowest bit indicates "new item" status (1 = new/unviewed, 0 = viewed).
         items[index as usize] = InventoryItemViewModel{
             ga_item_handle: gaitem_handle,
             item_id: id,
             equip_index: equip_index as u32,
             quantity: quantity,
-            inventory_index: acquisiton_sort_order_index,
+            inventory_index: (acquisiton_sort_order_index << 1) | 1,
             item_name: name,
             r#type: r#type
         };

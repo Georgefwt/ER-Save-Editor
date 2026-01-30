@@ -56,7 +56,7 @@ pub fn browse_inventory(ui: &mut Ui, vm:&mut ViewModel) {
     let mut frame = egui::Frame::none();
     frame.inner_margin = Margin { top: 8., left: 0., bottom: 8., right: 0. };
     frame.show(ui,|ui| {
-        egui::Grid::new("browse_header").spacing([16., 16.]).min_col_width(ui.available_width()/4.).striped(true).show(ui, |ui| {
+        egui::Grid::new("browse_header").spacing([16., 16.]).min_col_width(ui.available_width()/5.).striped(true).show(ui, |ui| {
             // Table Header
             let mut job = LayoutJob::default();
             job.append("Item ID", 0., TextFormat{
@@ -85,6 +85,13 @@ pub fn browse_inventory(ui: &mut Ui, vm:&mut ViewModel) {
                 ..Default::default()
             });
             ui.label(job);
+
+            let mut job = LayoutJob::default();
+            job.append("Viewed", 0., TextFormat{
+                color: Color32::BLACK,
+                ..Default::default()
+            });
+            ui.label(job);
             ui.end_row();
         });
     });
@@ -98,13 +105,18 @@ pub fn browse_inventory(ui: &mut Ui, vm:&mut ViewModel) {
         InventoryTypeRoute::Talismans => &inventory_vm.storage[inventory_vm.at_storage_box as usize].filtered_accessories,
     };
     egui::ScrollArea::vertical().show_rows(ui, 10., current_inventory_list.len(), |ui, row_range| {
-        egui::Grid::new("browse_body").spacing([8., 8.]).min_col_width(ui.available_width()/4.).striped(true).show(ui, |ui| {
+        egui::Grid::new("browse_body").spacing([8., 8.]).min_col_width(ui.available_width()/5.).striped(true).show(ui, |ui| {
             for i in row_range {
                 let item = &current_inventory_list[i];
                 ui.label(format!("{}",item.item_id));
                 ui.add(egui::Label::new(item.item_name.to_string()).wrap(true));
                 ui.label(format!("{}",item.quantity));
-                ui.label(format!("{}",item.inventory_index));
+                // Acquisition Sort ID is stored as (sort_id << 1) | viewed_flag
+                // Display the actual sort ID by right shifting
+                ui.label(format!("{}", item.inventory_index >> 1));
+                // Viewed status: lowest bit 0 = viewed, 1 = new/unviewed
+                let viewed = (item.inventory_index & 1) == 0;
+                ui.label(if viewed { "Yes" } else { "No" });
                 ui.end_row();
             }
         });
