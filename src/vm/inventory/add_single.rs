@@ -86,8 +86,7 @@ impl InventoryViewModel {
     fn add_weapon(&mut self, id: u32, gem: Option<u32>, upgrade: Option<i16>, affinity: Option<i16>) {
         // If weapon has ash of war then handle adding the ash of war to the inventory
         let mut gem_gaitem_handle = u32::MAX;
-        if gem.is_some() {
-            let gem_id = gem.unwrap();
+        if let Some(gem_id) = gem.filter(|g| *g != u32::MAX) {
             match Regulation::equip_gem_param_map().get(&gem_id) {
                 Some(gem_param) => { 
                     gem_gaitem_handle = self.add_aow(gem_param.id);

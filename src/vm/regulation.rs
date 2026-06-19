@@ -68,6 +68,13 @@ pub mod regulation_view_model {
         Bolt = 85,
         BallistaBolt = 86,
         Torch = 87,
+        HandToHand = 88,
+        ThrustingShield = 90,
+        ThrowingWeapon = 91,
+        ReverseHandSword = 92,
+        LightGreatsword = 93,
+        GreatKatana = 94,
+        BeastClaw = 95,
         Unknown = 99
     }
     impl From<i16> for WepType {
@@ -112,6 +119,13 @@ pub mod regulation_view_model {
                 85 => WepType::Bolt, 
                 86 => WepType::BallistaBolt, 
                 87 => WepType::Torch, 
+                88 => WepType::HandToHand,
+                90 => WepType::ThrustingShield,
+                91 => WepType::ThrowingWeapon,
+                92 => WepType::ReverseHandSword,
+                93 => WepType::LightGreatsword,
+                94 => WepType::GreatKatana,
+                95 => WepType::BeastClaw,
                 _ => WepType::Unknown
             }
         }
@@ -376,6 +390,27 @@ pub mod regulation_view_model {
                     },
                     WepType::Torch => {
                         gem.data.canMountWep_Torch()
+                    },
+                    WepType::HandToHand => {
+                        gem.data.canMountWep_HandToHand()
+                    },
+                    WepType::ThrustingShield => {
+                        gem.data.canMountWep_ThrustingShield()
+                    },
+                    WepType::ThrowingWeapon => {
+                        gem.data.canMountWep_ThrowingWeapon()
+                    },
+                    WepType::ReverseHandSword => {
+                        gem.data.canMountWep_ReverseHandSword()
+                    },
+                    WepType::LightGreatsword => {
+                        gem.data.canMountWep_LightGreatsword()
+                    },
+                    WepType::GreatKatana => {
+                        gem.data.canMountWep_GreatKatana()
+                    },
+                    WepType::BeastClaw => {
+                        gem.data.canMountWep_BeastClaw()
                     },
                     WepType::None |
                     WepType::Arrow |
