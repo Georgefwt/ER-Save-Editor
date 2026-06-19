@@ -11,7 +11,7 @@ pub mod settings {
             ui.label(RichText::new("Auto-backup").strong());
             ui.add_space(4.0);
             ui.label(
-                RichText::new("Auto-backup is required and always enabled.")
+                RichText::new("Auto-backup is enabled for your own safety.")
                     .color(Color32::from_rgb(120, 200, 120)),
             );
 

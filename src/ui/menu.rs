@@ -10,7 +10,6 @@ pub mod menu {
         Inventory,
         EventFlags,
         Regions,
-        Settings,
     }
 
     pub fn menu(ui: &mut Ui, app: &mut App) {
@@ -20,10 +19,6 @@ pub mod menu {
         let inventory = ui.add_sized([120., 40.], egui::Button::new("Inventory"));
         let event_flags = ui.add_sized([120., 40.], egui::Button::new("Event Flags"));
         let regions = ui.add_sized([120., 40.], egui::Button::new("Regions"));
-        let settings_btn = ui.add_sized(
-            [120., 40.],
-            egui::Button::new(format!("{} Settings", egui_phosphor::regular::GEAR)),
-        );
 
         if general.clicked() {
             app.current_route = Route::General;
@@ -42,9 +37,6 @@ pub mod menu {
         }
         if regions.clicked() {
             app.current_route = Route::Regions
-        }
-        if settings_btn.clicked() {
-            app.current_route = Route::Settings
         }
 
         match app.current_route {
@@ -66,9 +58,6 @@ pub mod menu {
             }
             Route::Regions => {
                 regions.highlight();
-            }
-            Route::Settings => {
-                settings_btn.highlight();
             }
         }
     }

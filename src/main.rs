@@ -66,6 +66,7 @@ pub struct App {
     importer_vm: ImporterViewModel,
     importer_open: bool,
     backup_folder: Option<PathBuf>,
+    settings_open: bool,
     show_save_confirm: bool,
     pending_save_path: Option<PathBuf>,
     pending_backup_name: Option<String>,
@@ -74,7 +75,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         Self {
             save: Save::default(),
             picked_path: Default::default(),
@@ -82,7 +83,8 @@ impl App {
             vm: ViewModel::default(),
             importer_vm: Default::default(),
             importer_open: Default::default(),
-            backup_folder: None,
+            backup_folder: Self::load_backup_folder(cc),
+            settings_open: false,
             show_save_confirm: false,
             pending_save_path: None,
             pending_backup_name: None,
@@ -157,6 +159,12 @@ impl App {
         self.show_save_confirm = false;
     }
 
+    fn load_backup_folder(cc: &eframe::CreationContext<'_>) -> Option<PathBuf> {
+        cc.storage
+            .and_then(|s| s.get_string("backup_folder"))
+            .and_then(|s| PathBuf::from(s).canonicalize().ok())
+    }
+
     fn open_file_dialog() -> Option<PathBuf> {
         FileDialog::new()
             .add_filter("SL2/DAT", &["sl2", "dat"])
@@ -187,6 +195,14 @@ impl App {
 
 
 impl eframe::App for App {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        if let Some(folder) = &self.backup_folder {
+            if let Some(path) = folder.to_str() {
+                storage.set_string("backup_folder", path.to_string());
+            }
+        }
+    }
+
     fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
         let ctx = ui.ctx();
         ctx.set_zoom_factor(1.75);
@@ -222,6 +238,9 @@ impl eframe::App for App {
                                 self.show_save_confirm = true;
                             }
                         }
+                    }
+                    if ui.button(egui::RichText::new(format!("{}", egui_phosphor::regular::GEAR))).clicked() {
+                        self.settings_open = true;
                     }
                 });
                 
@@ -331,7 +350,6 @@ impl eframe::App for App {
                     Route::Inventory => inventory(ui, &mut self.vm),
                     Route::EventFlags => events(ui, &mut self.vm),
                     Route::Regions => regions(ui, &mut self.vm),
-                    Route::Settings => settings_view(ui, self),
                 }
             });
         }
@@ -456,6 +474,22 @@ impl eframe::App for App {
                 self.show_save_confirm = false;
                 self.pending_save_path = None;
                 self.pending_backup_name = None;
+            }
+        }
+
+        // Settings window
+        if self.settings_open {
+            let mut open = true;
+            egui::Window::new("Settings")
+                .open(&mut open)
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    settings_view(ui, self);
+                });
+            if !open {
+                self.settings_open = false;
             }
         }
 
