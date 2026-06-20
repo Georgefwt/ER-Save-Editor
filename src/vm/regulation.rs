@@ -505,7 +505,8 @@ pub mod regulation_view_model {
                     .filter(|reg_item_vm|
                         reg_item_vm.id > 9100 || reg_item_vm.id < 9000
                     )
-                    .collect::<Vec<RegulationItemViewModel>>(); 
+                    .filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_"))
+                    .collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_goods.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -543,7 +544,7 @@ pub mod regulation_view_model {
                         distance > 0.3 
                     }).filter(|i|{
                         i.id % 10_000 == 0
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_weapons.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -572,7 +573,7 @@ pub mod regulation_view_model {
                         distance > 0.3 
                     }).filter(|reg_item_vm|{
                         reg_item_vm.id > 40000
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_protectors.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -601,7 +602,7 @@ pub mod regulation_view_model {
                         distance > 0.3 
                     }).filter(|reg_item_vm|{
                         reg_item_vm.id > 10000
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_gems.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -628,7 +629,7 @@ pub mod regulation_view_model {
                         if filter_text.is_empty() { return true; }
                         let distance = sorensen_dice(&reg_item_vm.name.to_lowercase(), &filter_text.to_lowercase());
                         distance > 0.3 
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_accessories.sort_by(|a,b| {
                         if filter_text.is_empty() {

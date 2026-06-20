@@ -144,10 +144,10 @@ impl InventoryItemViewModel {
                                     name.to_string()
                                 }
                             } else {
-                                format!("[UNKOWN_{}]", id)
+                                format!("[UNKNOWN_{}]", id)
                             }
                         }
-                        None => format!("[UNKOWN_{}]", id),
+                        None => format!("[UNKNOWN_{}]", id),
                     },
                 )
             }
@@ -160,10 +160,10 @@ impl InventoryItemViewModel {
                             if !name.is_empty() {
                                 name.to_string()
                             } else {
-                                format!("[UNKOWN_{}]", id)
+                                format!("[UNKNOWN_{}]", id)
                             }
                         }
-                        None => format!("[UNKOWN_{}]", id),
+                        None => format!("[UNKNOWN_{}]", id),
                     },
                 )
             }
@@ -176,10 +176,10 @@ impl InventoryItemViewModel {
                             if !name.is_empty() {
                                 name.to_string()
                             } else {
-                                format!("[UNKOWN_{}]", id)
+                                format!("[UNKNOWN_{}]", id)
                             }
                         }
-                        None => format!("[UNKOWN_{}]", id),
+                        None => format!("[UNKNOWN_{}]", id),
                     },
                 )
             }
@@ -192,10 +192,10 @@ impl InventoryItemViewModel {
                             if !name.is_empty() {
                                 name.to_string()
                             } else {
-                                format!("[UNKOWN_{}]", id)
+                                format!("[UNKNOWN_{}]", id)
                             }
                         }
-                        None => format!("[UNKOWN_{}]", id),
+                        None => format!("[UNKNOWN_{}]", id),
                     },
                 )
             }
@@ -208,10 +208,10 @@ impl InventoryItemViewModel {
                             if !name.is_empty() {
                                 name.to_string()
                             } else {
-                                format!("[UNKOWN_{}]", id)
+                                format!("[UNKNOWN_{}]", id)
                             }
                         }
-                        None => format!("[UNKOWN_{}]", id),
+                        None => format!("[UNKNOWN_{}]", id),
                     },
                 )
             }

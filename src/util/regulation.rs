@@ -87,8 +87,8 @@ impl Regulation {
     {
         rows.iter_mut().for_each(|(_, entry)| {
             entry.name = match map.lock().unwrap().get(&(entry.id)) {
-                Some(name) => if !name.is_empty() { name.to_string() } else { format!("[UNKOWN_{}]", entry.id) },
-                None => format!("[UNKOWN_{}]", entry.id),
+                Some(name) => if !name.is_empty() { name.to_string() } else { format!("[UNKNOWN_{}]", entry.id) },
+                None => format!("[UNKNOWN_{}]", entry.id),
             };
         });
     }

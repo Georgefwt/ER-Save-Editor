@@ -444,7 +444,11 @@ pub mod vm {
             // Summoning Pools
             for (summoning_pool, on) in self.slots[index].events_vm.summoning_pools.iter() {
                 let summoning_pool_info = SUMMONING_POOLS.lock().unwrap()[&summoning_pool];
-                let offset = EVENT_FLAGS.lock().unwrap()[&summoning_pool_info.0];
+                // Safety net: but skip any future pool whose id lacks an offset instead of index-panicking.
+                let offset = match EVENT_FLAGS.lock().unwrap().get(&summoning_pool_info.0) {
+                    Some(offset) => *offset,
+                    None => continue,
+                };
                 save_type.set_character_event_flag(index, offset.0 as usize, offset.1, *on);
             }
 

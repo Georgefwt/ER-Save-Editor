@@ -868,6 +868,195 @@ pub mod save {
             is_ps_save_wizard
         }
     }
-    
+
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::save::save::save::Save;
+    use crate::write::write::Write;
+    use std::path::PathBuf;
+
+    fn diff_regions(a: &[u8], b: &[u8]) -> Vec<(usize, usize)> {
+        let mut regions = Vec::new();
+        let mut in_diff = false;
+        let mut start = 0;
+        for (i, (x, y)) in a.iter().zip(b.iter()).enumerate() {
+            if x != y {
+                if !in_diff { start = i; in_diff = true; }
+            } else {
+                if in_diff { regions.push((start, i - 1)); in_diff = false; }
+            }
+        }
+        if in_diff { regions.push((start, a.len() - 1)); }
+        regions
+    }
+
+    fn roundtrip(path: &str) {
+        let path = PathBuf::from(path);
+        let save = Save::from_path(&path).expect("failed to load save");
+        let bytes = save.write().expect("failed to write save");
+        let original = std::fs::read(&path).expect("failed to read original");
+        let regions = diff_regions(&original, &bytes);
+        println!("{}: diff_count={} regions={}", path.display(), original.iter().zip(bytes.iter()).filter(|(a, b)| a != b).count(), regions.len());
+        for (s, e) in &regions {
+            println!("  diff 0x{:x}-0x{:x} len=0x{:x}", s, e, e - s + 1);
+        }
+        assert!(regions.is_empty(), "round-trip should produce zero diffs");
+    }
+
+    #[test]
+    fn test_ps_roundtrip_no_modify_v150() {
+        roundtrip("~/ER-Save-Lib/test/PS_Save.txt");
+    }
+
+    #[test]
+    fn test_ps_slot_versions() {
+        let path = PathBuf::from("~/Documents/elden/memory.dat.2026-06-19_21-22-18");
+        let save = Save::from_path(&path).expect("failed to load save");
+        match &save.save_type {
+            crate::SaveType::PlayStation(ps) => {
+                for (i, slot) in ps.save_slots.iter().enumerate() {
+                    println!("slot {}: ver={}", i, slot.ver);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    #[test]
+    fn test_ps_roundtrip_no_modify_v251() {
+        roundtrip("~/Documents/elden/memory.dat.2026-06-19_21-22-18");
+    }
+
+    // End-to-end: add a key item through the inventory VM, persist, reload and
+    // confirm (a) the item is present and (b) the only byte changes are the
+    // intended inventory edits — no stray corruption elsewhere in the slot.
+    #[test]
+    fn test_ps_add_key_item_persists_and_confined() {
+        use crate::vm::inventory::InventoryTypeRoute;
+        use crate::vm::vm::vm::ViewModel;
+
+        let path = PathBuf::from("~/Documents/elden/memory.dat.2026-06-19_21-22-18");
+        let original = std::fs::read(&path).expect("failed to read original");
+
+        let mut save = Save::from_path(&path).expect("failed to load save");
+        let mut vm = ViewModel::from_save(&save);
+
+        // First active character slot.
+        let idx = save
+            .save_type
+            .active_slots()
+            .iter()
+            .position(|a| *a)
+            .expect("expected at least one active slot");
+
+        // Populate the key-item list from regulation and pick a real key item.
+        vm.regulation.filter(&InventoryTypeRoute::KeyItems, "");
+        let key_item = vm
+            .regulation
+            .filtered_goods
+            .iter()
+            .find(|i| i.is_key_item)
+            .cloned()
+            .expect("expected a key item in regulation params");
+        let key_item_id = key_item.id;
+
+        // Add it through the real VM path and commit to the save.
+        vm.slots[idx].inventory_vm.add_to_inventory(&key_item);
+        assert!(vm.slots[idx].inventory_vm.changed, "add should mark inventory changed");
+        vm.update_save(&mut save.save_type);
+
+        let bytes = save.write().expect("failed to write save");
+
+        // Reload from the written bytes and confirm the key item survived.
+        let tmp = std::env::temp_dir().join("er_save_editor_keyitem_test.dat");
+        std::fs::write(&tmp, &bytes).expect("failed to write temp save");
+        let save2 = Save::from_path(&tmp).expect("failed to reload save");
+        let vm2 = ViewModel::from_save(&save2);
+        let inv = &vm2.slots[idx].inventory_vm;
+        let present = inv.storage[0].key_items.iter().any(|i| i.item_id == key_item_id)
+            || inv.storage[1].key_items.iter().any(|i| i.item_id == key_item_id);
+        assert!(present, "added key item {:#x} should be present after reload", key_item_id);
+        let _ = std::fs::remove_file(&tmp);
+
+        // The edit must change something, and only within a bounded set of regions
+        // (inventory + counts), never a wholesale rewrite of the slot.
+        let regions = diff_regions(&original, &bytes);
+        let changed_bytes: usize = regions.iter().map(|(s, e)| e - s + 1).sum();
+        println!(
+            "add-key-item: regions={} changed_bytes={}",
+            regions.len(),
+            changed_bytes
+        );
+        assert!(!regions.is_empty(), "adding an item should change the save");
+        assert!(
+            changed_bytes < 0x1000,
+            "unexpectedly large change ({} bytes) — possible corruption",
+            changed_bytes
+        );
+    }
+
+    // Toggling a v1.12+ summoning pool (block 670, previously wired to the placeholder
+    // offset 0x0/bit0) must now map to a real, distinct event flag: it persists across a
+    // save/reload and the change does not land on event_flags byte 0.
+    #[test]
+    fn test_ps_summoning_pool_670_toggle_persists() {
+        use crate::db::summoning_pools::summoning_pools::SummoningPool;
+        use crate::vm::vm::vm::ViewModel;
+
+        let path = PathBuf::from("~/Documents/elden/memory.dat.2026-06-19_21-22-18");
+        let original = std::fs::read(&path).expect("failed to read original");
+
+        let mut save = Save::from_path(&path).expect("failed to load save");
+        let mut vm = ViewModel::from_save(&save);
+        let idx = save
+            .save_type
+            .active_slots()
+            .iter()
+            .position(|a| *a)
+            .expect("expected at least one active slot");
+
+        // Divine Tower of Caelid — the pool that was missing entirely from the table.
+        let pool = SummoningPool::SummoningPool670490;
+        let was_on = *vm.slots[idx]
+            .events_vm
+            .summoning_pools
+            .get(&pool)
+            .expect("pool should exist in events vm");
+        let target = !was_on;
+        vm.slots[idx].events_vm.summoning_pools.insert(pool, target);
+
+        vm.update_save(&mut save.save_type);
+        let bytes = save.write().expect("failed to write save");
+
+        let tmp = std::env::temp_dir().join("er_save_editor_pool_test.dat");
+        std::fs::write(&tmp, &bytes).expect("failed to write temp save");
+        let save2 = Save::from_path(&tmp).expect("failed to reload save");
+        let vm2 = ViewModel::from_save(&save2);
+        let reloaded = *vm2.slots[idx]
+            .events_vm
+            .summoning_pools
+            .get(&pool)
+            .expect("pool should exist after reload");
+        let _ = std::fs::remove_file(&tmp);
+        assert_eq!(reloaded, target, "summoning pool toggle should persist");
+
+        // The change must be small and must not corrupt event_flags byte 0 (the old
+        // placeholder target). diff offsets are file offsets; just assert it's bounded.
+        let regions = diff_regions(&original, &bytes);
+        let changed_bytes: usize = regions.iter().map(|(s, e)| e - s + 1).sum();
+        println!(
+            "pool-toggle: regions={} changed_bytes={}",
+            regions.len(),
+            changed_bytes
+        );
+        assert!(!regions.is_empty(), "toggling a pool should change the save");
+        assert!(
+            changed_bytes < 0x40,
+            "unexpectedly large change ({} bytes) for a single flag toggle",
+            changed_bytes
+        );
+    }
 }
 
