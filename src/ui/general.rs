@@ -6,11 +6,11 @@ pub mod general {
     pub fn general(ui: &mut Ui, vm:&mut ViewModel) {
         ui.with_layout( egui::Layout::top_down_justified(egui::Align::Min),|ui|{
             let general_vm = &mut vm.slots[vm.index].general_vm;
-            
+
             // Character Name
             ui.label("Character Name:");
             ui.add(egui::widgets::TextEdit::singleline(&mut general_vm.character_name).char_limit(0x10));
-        
+
             ui.add_space(8.0);
 
             ui.horizontal(|ui|{
@@ -19,6 +19,25 @@ pub mod general {
                 };
                 if ui.radio(general_vm.gender == Gender::Female, "Female").clicked(){
                     general_vm.gender = Gender::Female;
+                };
+            });
+
+            ui.add_space(16.0);
+
+            // Play Time
+            ui.horizontal(|ui|{
+                ui.label("Play Time:");
+                ui.label(general_vm.play_time_formatted());
+            });
+
+            ui.add_space(8.0);
+
+            // Death Count
+            ui.horizontal(|ui|{
+                ui.label("Deaths:");
+                match general_vm.death_count {
+                    Some(count) => ui.label(format!("{}", count)),
+                    None => ui.label("N/A"),
                 };
             });
         });

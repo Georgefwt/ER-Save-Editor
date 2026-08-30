@@ -351,11 +351,16 @@ impl InventoryViewModel {
             .iter()
             .enumerate()
             .for_each(|(index, gaitem)| {
-                if (gaitem.gaitem_handle & 0xF0000000) == InventoryGaitemType::AOW as u32 {
+                // Track last non-empty AOW index
+                if (gaitem.gaitem_handle & 0xF0000000) == InventoryGaitemType::AOW as u32 && gaitem.gaitem_handle != 0 {
                     inventory_vm.next_aow_index = index;
                 }
+                // Track highest gaitem_handle value for generating new handles
                 if (gaitem.gaitem_handle & 0xFFFF) > (inventory_vm.next_gaitem_handle) {
                     inventory_vm.next_gaitem_handle = gaitem.gaitem_handle & 0xFFFF;
+                }
+                // Track last non-empty armament/armor index (not AOW)
+                if gaitem.gaitem_handle != 0 && (gaitem.gaitem_handle & 0xF0000000) != InventoryGaitemType::AOW as u32 {
                     inventory_vm.next_armament_or_armor_index = index;
                 }
             });

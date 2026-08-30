@@ -72,10 +72,11 @@ pub mod vm {
             // Get active characters
             for (index, active) in save.save_type.active_slots().iter().enumerate() {
                 if *active {
-                    vm.profile_summary[index] = ProfileSummaryViewModel::from_save(
-                        &save.save_type.get_profile_summary(index),
-                    );
+                    let profile_summary = save.save_type.get_profile_summary(index);
+                    vm.profile_summary[index] = ProfileSummaryViewModel::from_save(&profile_summary);
                     vm.slots[index] = SlotViewModel::from_save(&save.save_type.get_slot(index));
+                    // Set seconds_played from ProfileSummary to GeneralViewModel
+                    vm.slots[index].general_vm.seconds_played = profile_summary.seconds_played;
                 }
             }
 
@@ -409,6 +410,11 @@ pub mod vm {
         }
 
         fn update_events(&self, save_type: &mut SaveType, index: usize) {
+            // Don't update savefile events if it has not been changed
+            if !self.slots[index].events_vm.changed {
+                return;
+            }
+
             for (grace, on) in self.slots[index].events_vm.graces.iter() {
                 let grace_info = GRACES.lock().unwrap()[&grace];
                 let offset = EVENT_FLAGS.lock().unwrap()[&grace_info.1];

@@ -66,7 +66,10 @@ pub mod events {
         ui.vertical(|ui| {
             let maps = &vm.slots[vm.index].events_vm.grace_groups;
             let graces = &mut vm.slots[vm.index].events_vm.graces;
-            select_all_checkbox(ui, graces, "All Graces");
+            let changed = &mut vm.slots[vm.index].events_vm.changed;
+            if select_all_checkbox_changed(ui, graces, "All Graces") {
+                *changed = true;
+            }
             for map in maps {
                 ui.push_id(map.0, |ui| {
                     let collapsing = egui::containers::collapsing_header::CollapsingHeader::new(MAP_NAME.lock().unwrap()[&map.0]);
@@ -80,6 +83,7 @@ pub mod events {
                         }
 
                         if three_states_checkbox(ui, &state).clicked() {
+                            *changed = true;
                             match state {
                                 State::Off => map.1.iter().for_each(|g| *graces.get_mut(g).expect("") = true),
                                 State::On => map.1.iter().for_each(|g| *graces.get_mut(g).expect("") = false),
@@ -91,7 +95,9 @@ pub mod events {
                             for grace in map.1 {
                                 let grace_info: (MapName, u32, &str) = GRACES.lock().unwrap()[&grace];
                                 let on = graces.get_mut(grace).expect("");
-                                ui.checkbox(on, grace_info.2.to_string());
+                                if ui.checkbox(on, grace_info.2.to_string()).changed() {
+                                    *changed = true;
+                                }
                             }
                         });
                     });
@@ -102,59 +108,89 @@ pub mod events {
 
     fn whetblades(ui: &mut Ui, vm:&mut ViewModel) {
         let whetblades = &mut vm.slots[vm.index].events_vm.whetblades;
-        select_all_checkbox::<Whetblade>(ui, whetblades, "All Whetblades");
+        let changed = &mut vm.slots[vm.index].events_vm.changed;
+        if select_all_checkbox_changed::<Whetblade>(ui, whetblades, "All Whetblades") {
+            *changed = true;
+        }
         for (whetblade, on) in whetblades {
             let whetblade_info: (u32,&str) = WHETBLADES.lock().unwrap()[&whetblade];
-            ui.checkbox(on, whetblade_info.1.to_string());
+            if ui.checkbox(on, whetblade_info.1.to_string()).changed() {
+                *changed = true;
+            }
         }
     }
 
     fn cookbooks(ui: &mut Ui, vm:&mut ViewModel) {
         let cookbooks = &mut vm.slots[vm.index].events_vm.cookbooks;
-        select_all_checkbox::<Cookbook>(ui, cookbooks, "All Cookbooks");
+        let changed = &mut vm.slots[vm.index].events_vm.changed;
+        if select_all_checkbox_changed::<Cookbook>(ui, cookbooks, "All Cookbooks") {
+            *changed = true;
+        }
         for (cookbook, on) in cookbooks {
             let cookbook_info: (u32,&str) = COOKBOKS.lock().unwrap()[&cookbook];
-            ui.checkbox(on, cookbook_info.1.to_string());
+            if ui.checkbox(on, cookbook_info.1.to_string()).changed() {
+                *changed = true;
+            }
         }
     }
 
     fn maps(ui: &mut Ui, vm:&mut ViewModel) {
         let maps = &mut vm.slots[vm.index].events_vm.maps;
-        select_all_checkbox::<Map>(ui, maps, "All Maps");
+        let changed = &mut vm.slots[vm.index].events_vm.changed;
+        if select_all_checkbox_changed::<Map>(ui, maps, "All Maps") {
+            *changed = true;
+        }
         for (map, on) in maps {
             let map_info: (u32,&str) = MAPS.lock().unwrap()[&map];
-            ui.checkbox(on, map_info.1.to_string());
+            if ui.checkbox(on, map_info.1.to_string()).changed() {
+                *changed = true;
+            }
         }
     }
 
     fn bosses(ui: &mut Ui, vm:&mut ViewModel) {
         let bosses = &mut vm.slots[vm.index].events_vm.bosses;
-        select_all_checkbox::<Boss>(ui, bosses, "All Bosses");
+        let changed = &mut vm.slots[vm.index].events_vm.changed;
+        if select_all_checkbox_changed::<Boss>(ui, bosses, "All Bosses") {
+            *changed = true;
+        }
         for (boss, on) in bosses {
             let boss_info: (u32,&str) = BOSSES.lock().unwrap()[&boss];
-            ui.checkbox(on, boss_info.1.to_string());
+            if ui.checkbox(on, boss_info.1.to_string()).changed() {
+                *changed = true;
+            }
         }
     }
 
     fn summoning_pools(ui: &mut Ui, vm:&mut ViewModel) {
         let summoning_pools = &mut vm.slots[vm.index].events_vm.summoning_pools;
-        select_all_checkbox::<SummoningPool>(ui, summoning_pools, "All Summoning Pools");
+        let changed = &mut vm.slots[vm.index].events_vm.changed;
+        if select_all_checkbox_changed::<SummoningPool>(ui, summoning_pools, "All Summoning Pools") {
+            *changed = true;
+        }
         for (summoning_pool, on) in summoning_pools {
             let summoning_pool_info: (u32,&str) = SUMMONING_POOLS.lock().unwrap()[&summoning_pool];
-            ui.checkbox(on, summoning_pool_info.1.to_string());
+            if ui.checkbox(on, summoning_pool_info.1.to_string()).changed() {
+                *changed = true;
+            }
         }
     }
 
     fn colosseums(ui: &mut Ui, vm:&mut ViewModel) {
         let colosseums = &mut vm.slots[vm.index].events_vm.colosseums;
-        select_all_checkbox::<Colosseum>(ui, colosseums, "All Colusseums");
+        let changed = &mut vm.slots[vm.index].events_vm.changed;
+        if select_all_checkbox_changed::<Colosseum>(ui, colosseums, "All Colusseums") {
+            *changed = true;
+        }
         for (colosseum, on) in colosseums {
             let colosseum_info: (u32,&str) = COLOSSEUMS.lock().unwrap()[&colosseum];
-            ui.checkbox(on, colosseum_info.1.to_string());
+            if ui.checkbox(on, colosseum_info.1.to_string()).changed() {
+                *changed = true;
+            }
         }
     }
 
-    fn select_all_checkbox<T>(ui: &mut Ui, map: &mut BTreeMap<T, bool>, label: &str) {
+    fn select_all_checkbox_changed<T>(ui: &mut Ui, map: &mut BTreeMap<T, bool>, label: &str) -> bool {
         let mut state = State::Off;
         if map.values().all(|w|*w) {
             state = State::On;
@@ -163,8 +199,10 @@ pub mod events {
             state = State::InBetween;
         }
 
+        let mut changed = false;
         ui.horizontal(|ui| {
             if three_states_checkbox(ui, &state).clicked() {
+                changed = true;
                 match state {
                     State::Off => map.values_mut().for_each(|w| *w = true),
                     State::On => map.values_mut().for_each(|w| *w = false),
@@ -174,5 +212,6 @@ pub mod events {
             ui.label(label);
         });
         ui.separator();
+        changed
     }
 }

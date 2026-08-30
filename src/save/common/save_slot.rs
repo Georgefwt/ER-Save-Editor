@@ -1893,9 +1893,159 @@ impl Write for SaveSlot {
 
         bytes.extend(self._0x80);
 
-        // Empty calories
-        bytes.extend(vec![0; 0x280000 - bytes.len()]);
+        // Rest of the data that was read but not parsed
+        bytes.extend(&self._rest);
+
+        // Pad to 0x280000 if needed
+        if bytes.len() < 0x280000 {
+            bytes.extend(vec![0; 0x280000 - bytes.len()]);
+        }
 
         Ok(bytes)
+    }
+}
+
+impl SaveSlot {
+    /// Find the death count within the save slot data using pattern matching.
+    /// Returns None if the death count cannot be found.
+    pub fn find_death_count(&self) -> Option<u32> {
+        // Get the raw bytes of this save slot
+        let data = match self.write() {
+            Ok(bytes) => bytes,
+            Err(_) => return None,
+        };
+
+        // Constants for death count search
+        const DEATH_SEARCH_MAX: usize = 300000;
+        const DEATH_SEARCH_MIN: usize = 200000;
+
+        // Algorithm 1: Search for specific byte pattern (4 consecutive 0xFF followed by specific pattern)
+        if let Some(death_pos) = self.find_death_position_new_algo(&data) {
+            if death_pos > DEATH_SEARCH_MIN && death_pos < DEATH_SEARCH_MAX {
+                let deaths = Self::read_i32_le(&data, death_pos);
+                return Some(deaths as u32);
+            }
+        }
+
+        // Algorithm 2: Fallback - find zero blocks and locate 0xFF pattern
+        if let Some(earliest_block_start) = self.find_earliest_zero_block(&data, 50000) {
+            if let Some(ff_pos) = self.find_next_ff_pattern(&data, earliest_block_start) {
+                if ff_pos > DEATH_SEARCH_MIN && ff_pos < DEATH_SEARCH_MAX && ff_pos >= 4 {
+                    let deaths = Self::read_i32_le(&data, ff_pos - 4);
+                    return Some(deaths as u32);
+                }
+            }
+        }
+
+        None
+    }
+
+    /// New algorithm: Find death data position by searching for specific byte patterns
+    fn find_death_position_new_algo(&self, data: &[u8]) -> Option<usize> {
+        const DEATH_SEARCH_START: usize = 15000;
+        const DEATH_SEARCH_MAX: usize = 300000;
+
+        let mut pos = DEATH_SEARCH_START;
+        let data_len = data.len();
+
+        while pos < data_len && pos < DEATH_SEARCH_MAX {
+            if data[pos] == 0xFF {
+                // Count consecutive 0xFF bytes
+                let mut ff_count = 0;
+                while pos < data_len && data[pos] == 0xFF {
+                    ff_count += 1;
+                    pos += 1;
+                }
+
+                // Need exactly 4 consecutive 0xFF
+                if ff_count == 4 && pos + 47 < data_len {
+                    // Check pattern: second byte should be 0x08
+                    if data[pos + 1] == 0x08 {
+                        // Validate next 45 bytes pattern
+                        let mut zero_count = 0;
+                        let mut is_valid = false;
+
+                        for i in 2..47 {
+                            if data[pos + i] == 0x00 {
+                                zero_count += 1;
+                            }
+                            if data[pos + i] == 0x08 {
+                                // Need at least 20 zeros to be valid
+                                if zero_count >= 20 {
+                                    is_valid = true;
+                                }
+                                break;
+                            }
+                        }
+
+                        if is_valid {
+                            return Some(pos - 8);
+                        }
+                    }
+                }
+            } else {
+                pos += 1;
+            }
+        }
+
+        None
+    }
+
+    /// Find the earliest zero block of at least min_length consecutive zeros
+    fn find_earliest_zero_block(&self, data: &[u8], min_length: usize) -> Option<usize> {
+        let mut block_start: Option<usize> = None;
+        let mut earliest_block: Option<usize> = None;
+
+        for (i, &byte) in data.iter().enumerate() {
+            if block_start.is_none() && byte == 0 {
+                block_start = Some(i);
+            } else if block_start.is_some() && byte != 0 {
+                let start = block_start.unwrap();
+                let block_length = i - start;
+                if block_length >= min_length {
+                    if earliest_block.is_none() || start < earliest_block.unwrap() {
+                        earliest_block = Some(start);
+                    }
+                }
+                block_start = None;
+            }
+        }
+
+        earliest_block
+    }
+
+    /// Find the next pattern of 4 consecutive 0xFF bytes starting from a position
+    fn find_next_ff_pattern(&self, data: &[u8], start_pos: usize) -> Option<usize> {
+        let mut pattern_start: Option<usize> = None;
+
+        for i in start_pos..data.len() {
+            if pattern_start.is_none() {
+                if data[i] == 0xFF {
+                    pattern_start = Some(i);
+                }
+            } else {
+                let start = pattern_start.unwrap();
+                if data[i] == 0xFF && i - start == 3 {
+                    return Some(start);
+                }
+                if data[i] != 0xFF {
+                    pattern_start = None;
+                }
+            }
+        }
+
+        None
+    }
+
+    /// Read a little-endian 32-bit signed integer from data at offset
+    /// Note: Despite the JS function being named "readInt32BE", it actually reads little-endian
+    /// (reverses bytes then reads big-endian = little-endian)
+    fn read_i32_le(data: &[u8], offset: usize) -> i32 {
+        i32::from_le_bytes([
+            data[offset],
+            data[offset + 1],
+            data[offset + 2],
+            data[offset + 3],
+        ])
     }
 }

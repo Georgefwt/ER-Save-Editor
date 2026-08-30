@@ -38,6 +38,8 @@ pub mod general_view_model {
         pub character_name: String,
         pub gender: Gender,
         pub weapon_level: u8,
+        pub seconds_played: u32,
+        pub death_count: Option<u32>,
     }
 
     impl GeneralViewModel {
@@ -61,12 +63,25 @@ pub mod general_view_model {
             // Weapon Level
             let weapon_level = slot.player_game_data.match_making_wpn_lvl;
 
+            // Death Count
+            let death_count = slot.find_death_count();
+
             Self {
                 steam_id,
                 character_name,
                 gender,
                 weapon_level,
+                seconds_played: 0, // Will be set from ProfileSummary
+                death_count,
             }
+        }
+
+        /// Format seconds played as "XXh XXm XXs"
+        pub fn play_time_formatted(&self) -> String {
+            let hours = self.seconds_played / 3600;
+            let minutes = (self.seconds_played % 3600) / 60;
+            let seconds = self.seconds_played % 60;
+            format!("{}h {}m {}s", hours, minutes, seconds)
         }
     }
 }

@@ -204,7 +204,7 @@ impl Write for ProfileSummaryEquipmentItem {
 pub struct ProfileSummary{
     pub character_name: [u16; 0x11],
     pub level: u32,
-    _0x28: u32 ,
+    pub seconds_played: u32,
     _0x2c: u32 ,
     _0x30: u32 ,
     _0x34: u32 ,
@@ -226,7 +226,7 @@ impl Default for ProfileSummary {
         Self {
             character_name: [0x0; 0x11],
             level: 0,
-            _0x28: 0,
+            seconds_played: 0,
             _0x2c: 0,
             _0x30: 0,
             _0x34: 0,
@@ -250,7 +250,7 @@ impl Read for ProfileSummary {
         let mut profile_summary = ProfileSummary::default();
         for i in 0..0x11 { profile_summary.character_name[i] = br.read_u16()?;}
         profile_summary.level = br.read_u32()?;
-        profile_summary._0x28 = br.read_u32()?;
+        profile_summary.seconds_played = br.read_u32()?;
         profile_summary._0x2c = br.read_u32()?;
         profile_summary._0x30 = br.read_u32()?;
         profile_summary._0x34 = br.read_u32()?;
@@ -274,7 +274,7 @@ impl Write for ProfileSummary{
         let mut bytes: Vec<u8> = Vec::new();
         for i in 0..0x11 { bytes.extend(self.character_name[i].to_le_bytes());}
         bytes.extend(self.level.to_le_bytes());
-        bytes.extend(self._0x28.to_le_bytes());
+        bytes.extend(self.seconds_played.to_le_bytes());
         bytes.extend(self._0x2c.to_le_bytes());
         bytes.extend(self._0x30.to_le_bytes());
         bytes.extend(self._0x34.to_le_bytes());

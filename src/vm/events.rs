@@ -17,6 +17,7 @@ pub mod events_view_model {
 
     #[derive(Clone)]
     pub struct EventsViewModel  {
+        pub changed: bool,
         pub current_route: EventsRoute,
         pub grace_groups: BTreeMap<MapName, Vec<Grace>>,
         pub graces: BTreeMap<Grace, bool>,
@@ -31,6 +32,7 @@ pub mod events_view_model {
     impl Default for EventsViewModel {
         fn default() -> Self {
             Self { 
+                changed: false,
                 current_route: EventsRoute::None,
                 grace_groups: MAP_NAME.lock().unwrap().iter().map(|m| (*m.0, Vec::new())).collect::<BTreeMap<_,_>>(),
                 graces: Default::default(),
