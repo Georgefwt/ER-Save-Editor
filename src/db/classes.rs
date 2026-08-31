@@ -15,6 +15,8 @@ pub mod classes {
         Prisoner = 8,
         Confessor = 6,
         Wretch = 9,
+        IdusKnight = 10,
+        HeavyKnight = 11,
     }
 
     impl TryFrom<u8> for ArcheType {
@@ -31,6 +33,8 @@ pub mod classes {
                 x if x == ArcheType::Prisoner as u8 => Ok(ArcheType::Prisoner),
                 x if x == ArcheType::Confessor as u8 => Ok(ArcheType::Confessor),
                 x if x == ArcheType::Wretch as u8 => Ok(ArcheType::Wretch),
+                x if x == ArcheType::IdusKnight as u8 => Ok(ArcheType::IdusKnight),
+                x if x == ArcheType::HeavyKnight as u8 => Ok(ArcheType::HeavyKnight),
                 _ => Err(()),
             }
         }
@@ -50,6 +54,8 @@ pub mod classes {
                 ArcheType::Prisoner => ArcheType::Prisoner as u8,
                 ArcheType::Confessor => ArcheType::Confessor as u8,
                 ArcheType::Wretch => ArcheType::Wretch as u8,
+                ArcheType::IdusKnight => ArcheType::IdusKnight as u8,
+                ArcheType::HeavyKnight => ArcheType::HeavyKnight as u8,
             }
         }
     }
@@ -68,6 +74,8 @@ pub mod classes {
                 ArcheType::Prisoner => "Prisoner".to_string(),
                 ArcheType::Confessor => "Confessor".to_string(),
                 ArcheType::Wretch => "Wretch".to_string(),
+                ArcheType::IdusKnight => "Idus Knight".to_string(),
+                ArcheType::HeavyKnight => "Heavy Knight".to_string(),
             }
         }
     }
@@ -83,6 +91,23 @@ pub mod classes {
         pub intelligence: u32,
         pub faith: u32,
         pub arcane: u32,
+    }
+
+    impl Stats {
+        /// Floor used for archetypes we have no starting stat block for, e.g. a
+        /// class added by a game patch we don't know about yet. Keeps the stats
+        /// page usable instead of panicking on an unrecognized class.
+        pub const UNKNOWN: Stats = Stats {
+            level: 1,
+            vigor: 1,
+            mind: 1,
+            endurance: 1,
+            strength: 1,
+            dexterity: 1,
+            intelligence: 1,
+            faith: 1,
+            arcane: 1,
+        };
     }
 
 
@@ -207,6 +232,30 @@ pub mod classes {
                 intelligence: 10,
                 faith: 10,
                 arcane: 10,
+            }),
+
+            (ArcheType::IdusKnight, Stats{
+                level: 7,
+                vigor: 10,
+                mind: 12,
+                endurance: 11,
+                strength: 13,
+                dexterity: 15,
+                intelligence: 8,
+                faith: 11,
+                arcane: 6,
+            }),
+
+            (ArcheType::HeavyKnight, Stats{
+                level: 10,
+                vigor: 14,
+                mind: 8,
+                endurance: 17,
+                strength: 15,
+                dexterity: 11,
+                intelligence: 7,
+                faith: 8,
+                arcane: 9,
             }),
         ]))
     });

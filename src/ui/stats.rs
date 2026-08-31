@@ -3,7 +3,7 @@ pub mod stats {
 
     use eframe::egui::{self, Ui};
     use egui_extras::{Column, TableBody, TableBuilder};
-    use crate::{db::classes::classes::{ArcheType, STARTER_CLASSES}, vm::vm::vm::ViewModel};
+    use crate::{db::classes::classes::{ArcheType, Stats, STARTER_CLASSES}, vm::vm::vm::ViewModel};
 
     pub fn stats(ui: &mut Ui,  vm: &mut ViewModel) {
         egui::Frame::default()
@@ -55,9 +55,10 @@ pub mod stats {
 
                     let class = {
                         let classes = STARTER_CLASSES.lock().unwrap();
-                        *classes
+                        classes
                             .get(&stats_vm.arche_type)
-                            .expect("Starter class definition missing")
+                            .copied()
+                            .unwrap_or(Stats::UNKNOWN)
                     };
 
                     // Calculate level from stats

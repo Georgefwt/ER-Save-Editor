@@ -109,9 +109,11 @@ pub mod save {
                 SaveType::Unknown => panic!("Why are we here?"),
                 SaveType::PC(pc_save) => {
                     pc_save.save_slots[index].save_slot.player_game_data.arche_type = arche_type;
+                    pc_save.user_data_10.profile_summary[index].arche_type = arche_type;
                 }
                 SaveType::PlayStation(ps_save) => {
                     ps_save.save_slots[index].player_game_data.arche_type = arche_type;
+                    ps_save.user_data_10.profile_summary[index].arche_type = arche_type;
                 },
             }
         }
@@ -124,6 +126,18 @@ pub mod save {
                 }
                 SaveType::PlayStation(ps_save) => {
                     ps_save.save_slots[index].player_game_data.health = health;
+                },
+            }
+        }
+
+        pub fn set_character_max_health(&mut self, index: usize, max_health: u32) {
+            match self {
+                SaveType::Unknown => panic!("Why are we here?"),
+                SaveType::PC(pc_save) => {
+                    pc_save.save_slots[index].save_slot.player_game_data.max_health = max_health;
+                }
+                SaveType::PlayStation(ps_save) => {
+                    ps_save.save_slots[index].player_game_data.max_health = max_health;
                 },
             }
         }
@@ -152,6 +166,18 @@ pub mod save {
             }
         }
 
+        pub fn set_character_max_fp(&mut self, index: usize, max_fp: u32) {
+            match self {
+                SaveType::Unknown => panic!("Why are we here?"),
+                SaveType::PC(pc_save) => {
+                    pc_save.save_slots[index].save_slot.player_game_data.max_fp = max_fp;
+                }
+                SaveType::PlayStation(ps_save) => {
+                    ps_save.save_slots[index].player_game_data.max_fp = max_fp;
+                },
+            }
+        }
+
         pub fn set_character_base_max_fp(&mut self, index: usize, base_max_fp: u32) {
             match self {
                 SaveType::Unknown => panic!("Why are we here?"),
@@ -172,6 +198,18 @@ pub mod save {
                 }
                 SaveType::PlayStation(ps_save) => {
                     ps_save.save_slots[index].player_game_data.sp = sp;
+                },
+            }
+        }
+
+        pub fn set_character_max_sp(&mut self, index: usize, max_sp: u32) {
+            match self {
+                SaveType::Unknown => panic!("Why are we here?"),
+                SaveType::PC(pc_save) => {
+                    pc_save.save_slots[index].save_slot.player_game_data.max_sp = max_sp;
+                }
+                SaveType::PlayStation(ps_save) => {
+                    ps_save.save_slots[index].player_game_data.max_sp = max_sp;
                 },
             }
         }

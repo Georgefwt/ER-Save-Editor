@@ -213,7 +213,9 @@ pub struct ProfileSummary{
     pub equipment_gaitem: ProfileSummaryEquipmentGaitem,
     pub equipment_item: ProfileSummaryEquipmentItem,
     _0x290: u8 ,
-    _0x291: u8 ,
+    /// Second copy of PlayerGameData::arche_type. The game cross-checks the two
+    /// and reports the save as corrupt if they disagree, so both must be written.
+    pub arche_type: u8 ,
     _0x292: u8 ,
     _0x293: u8 ,
     _0x294: u8 ,
@@ -235,7 +237,7 @@ impl Default for ProfileSummary {
             equipment_gaitem: Default::default(),
             equipment_item: Default::default(),
             _0x290: 0,
-            _0x291: 0,
+            arche_type: 0,
             _0x292: 0,
             _0x293: 0,
             _0x294: 0,
@@ -259,7 +261,7 @@ impl Read for ProfileSummary {
         profile_summary.equipment_gaitem = ProfileSummaryEquipmentGaitem::read(br)?;
         profile_summary.equipment_item = ProfileSummaryEquipmentItem::read(br)?;
         profile_summary._0x290 = br.read_u8()?;
-        profile_summary._0x291 = br.read_u8()?;
+        profile_summary.arche_type = br.read_u8()?;
         profile_summary._0x292 = br.read_u8()?;
         profile_summary._0x293 = br.read_u8()?;
         profile_summary._0x294 = br.read_u8()?;
@@ -283,7 +285,7 @@ impl Write for ProfileSummary{
         bytes.extend(self.equipment_gaitem.write()?);
         bytes.extend(self.equipment_item.write()?);
         bytes.push(self._0x290);
-        bytes.push(self._0x291);
+        bytes.push(self.arche_type);
         bytes.push(self._0x292);
         bytes.push(self._0x293);
         bytes.push(self._0x294);

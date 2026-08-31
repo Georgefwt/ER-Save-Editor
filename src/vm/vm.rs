@@ -137,14 +137,40 @@ pub mod vm {
                 + stats_vm.arcane
                 - 79;
 
-            save_type.set_character_health(index, HP[stats_vm.vigor as usize] as u32);
-            save_type.set_character_base_max_health(index, HP[stats_vm.vigor as usize] as u32);
+            // Only recompute the HP/FP/SP pools when the stat behind them actually
+            // changed -- update_stats runs for every active slot, so touching them
+            // unconditionally rewrote the current values of characters the user never
+            // edited. The gap between max_* and base_max_* is the equipment bonus and
+            // has to be carried over, otherwise the current value can end up above the
+            // maximum, which the game rejects.
+            let pgd = &save_type.get_slot(index).player_game_data;
+            let hp_bonus = pgd.max_health.saturating_sub(pgd.base_max_health);
+            let fp_bonus = pgd.max_fp.saturating_sub(pgd.base_max_fp);
+            let sp_bonus = pgd.max_sp.saturating_sub(pgd.base_max_sp);
+            let vigor_changed = pgd.vigor != stats_vm.vigor;
+            let mind_changed = pgd.mind != stats_vm.mind;
+            let endurance_changed = pgd.endurance != stats_vm.endurance;
 
-            save_type.set_character_fp(index, FP[stats_vm.mind as usize] as u32);
-            save_type.set_character_base_max_fp(index, FP[stats_vm.mind as usize] as u32);
+            if vigor_changed {
+                let base = HP[stats_vm.vigor as usize] as u32;
+                save_type.set_character_base_max_health(index, base);
+                save_type.set_character_max_health(index, base + hp_bonus);
+                save_type.set_character_health(index, base + hp_bonus);
+            }
 
-            save_type.set_character_sp(index, SP[stats_vm.endurance as usize] as u32);
-            save_type.set_character_base_max_sp(index, SP[stats_vm.endurance as usize] as u32);
+            if mind_changed {
+                let base = FP[stats_vm.mind as usize] as u32;
+                save_type.set_character_base_max_fp(index, base);
+                save_type.set_character_max_fp(index, base + fp_bonus);
+                save_type.set_character_fp(index, base + fp_bonus);
+            }
+
+            if endurance_changed {
+                let base = SP[stats_vm.endurance as usize] as u32;
+                save_type.set_character_base_max_sp(index, base);
+                save_type.set_character_max_sp(index, base + sp_bonus);
+                save_type.set_character_sp(index, base + sp_bonus);
+            }
 
             save_type.set_character_level(index, level);
             save_type.set_character_vigor(index, stats_vm.vigor);

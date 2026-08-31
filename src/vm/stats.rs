@@ -42,7 +42,10 @@ pub mod stats_view_model {
 
     impl StatsViewModel {
         pub fn from_save(slot: &SaveSlot) -> Self {
-            let arche_type = ArcheType::try_from(slot.player_game_data.arche_type).expect("");
+            // Fall back to Unknown rather than panicking so a save made with a class
+            // added by a newer game patch can still be opened.
+            let arche_type = ArcheType::try_from(slot.player_game_data.arche_type)
+                .unwrap_or(ArcheType::Unknown);
             let vigor = slot.player_game_data.vigor;
             let mind = slot.player_game_data.mind;
             let endurance = slot.player_game_data.endurance;
