@@ -8,3 +8,4 @@ pub mod events;
 pub mod regions;
 pub mod importer;
 pub mod equipment;
+pub mod settings;

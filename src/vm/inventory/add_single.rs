@@ -14,10 +14,14 @@ use super::{InventoryGaitemType, InventoryItemType, InventoryItemViewModel, Inve
 
 impl InventoryViewModel {
     pub fn add_to_inventory(&mut self, item: &RegulationItemViewModel) {
-        // Check if inventory is full
-        let held_inventory_full = self.storage[0].common_item_count == 2688;
+        // Check if inventory is full based on item type
+        let is_key_item = item.is_key_item && item.item_type == InventoryItemType::ITEM;
+        let held_inventory_full = if is_key_item {
+            self.storage[0].key_item_count >= 384
+        } else {
+            self.storage[0].common_item_count >= 2688
+        };
 
-        // Check if held inventory is full
         if held_inventory_full {
             self.log.insert(0, format!("Inventory is full."));
             return;
@@ -108,8 +112,7 @@ impl InventoryViewModel {
     fn add_weapon(&mut self, id: u32, gem: Option<u32>, upgrade: Option<i16>, affinity: Option<i16>) {
         // If weapon has ash of war then handle adding the ash of war to the inventory
         let mut gem_gaitem_handle = u32::MAX;
-        if gem.is_some() {
-            let gem_id = gem.unwrap();
+        if let Some(gem_id) = gem.filter(|g| *g != u32::MAX) {
             match Regulation::equip_gem_param_map().get(&gem_id) {
                 Some(gem_param) => { 
                     gem_gaitem_handle = self.add_aow(gem_param.id);
@@ -406,17 +409,20 @@ impl InventoryViewModel {
                 }
 
             } else {
-                // If quantity exceedes the maximum held amount then use max_held instead 
+                // If quantity exceedes the maximum held amount then use max_held instead
                 let amount = min(quantity, max_in_storage);
-                
+
                 // Add new item to storage
                 self.add_to_storage_common_items(gaitem_handle, id, amount, 1, name.to_string(), InventoryGaitemType::ITEM);
-                
+
                 // Update log
                 self.log.insert(0, format!("> Added {} {} to storage box", amount, name));
             }
         }
-        
+
+        // Add to gaitem data list if not present
+        self.upsert_gaitem_data_list(id);
+
     }
 
     fn add_key_item(&mut self, id: u32, quantity: u32) {
@@ -513,18 +519,21 @@ impl InventoryViewModel {
                 }
 
             } else {
-                // If quantity exceedes the maximum held amount then use max_held instead 
+                // If quantity exceedes the maximum held amount then use max_held instead
                 let amount = min(quantity, max_in_storage);
-                
+
                 if amount != 0 {
                     // Add new item to storage
                     self.add_to_storage_key_items(gaitem_handle, id, amount, 1, name.to_string(), InventoryGaitemType::ITEM);
-                    
+
                     // Update log
                     self.log.insert(0, format!("> Added {} {} to storage box", amount, name));
                 }
             }
         }
+
+        // Add to gaitem data list if not present
+        self.upsert_gaitem_data_list(id);
     }
 
     fn add_aow(&mut self, id: u32) -> u32 {
@@ -624,12 +633,25 @@ impl InventoryViewModel {
         // Prepare new item indexes
         let storage = &mut self.storage[storage_index];
         let items = &mut storage.common_items;
-        let index = storage.common_item_count;
-        let equip_index = equip_index_offset + storage.common_item_count;
         let acquisiton_sort_order_index = storage.next_acquisition_sort_order_index;
 
+        // Find the first empty slot (ga_item_handle == 0) to safely insert
+        // Items are normally contiguous, but gaps can appear from removed quest items
+        let capacity = if storage_index == 0 { 2688 } else { 1920 };
+        let index = items
+            .iter()
+            .position(|i| i.ga_item_handle == 0)
+            .unwrap_or(storage.common_item_count as usize);
+
+        if index >= capacity {
+            self.log.insert(0, format!("Common item storage is full."));
+            return;
+        }
+
+        let equip_index = equip_index_offset + index as u32;
+
         // Add item to storage
-        items[index as usize] = InventoryItemViewModel{
+        items[index] = InventoryItemViewModel{
             ga_item_handle: gaitem_handle,
             item_id: id,
             equip_index: equip_index as u32,
@@ -662,12 +684,25 @@ impl InventoryViewModel {
         // Prepare new item indexes
         let storage = &mut self.storage[storage_index];
         let items = &mut storage.key_items;
-        let index = storage.key_item_count;
-        let equip_index = equip_index_offset + storage.key_item_count;
         let acquisiton_sort_order_index = storage.next_acquisition_sort_order_index;
 
+        // Find the first empty slot (ga_item_handle == 0) to safely insert
+        // Items are normally contiguous, but gaps can appear from removed quest items
+        let capacity = if storage_index == 0 { 384 } else { 128 };
+        let index = items
+            .iter()
+            .position(|i| i.ga_item_handle == 0)
+            .unwrap_or(storage.key_item_count as usize);
+
+        if index >= capacity {
+            self.log.insert(0, format!("Key item storage is full."));
+            return;
+        }
+
+        let equip_index = equip_index_offset + index as u32;
+
         // Add item to storage
-        items[index as usize] = InventoryItemViewModel{
+        items[index] = InventoryItemViewModel{
             ga_item_handle: gaitem_handle,
             item_id: id,
             equip_index: equip_index as u32,
@@ -679,7 +714,7 @@ impl InventoryViewModel {
 
         // Increment storage indexes
         self.storage[storage_index].key_item_count = self.storage[storage_index].key_item_count + 1;
-        self.storage[storage_index].next_equip_index = equip_index + 1;
+        self.storage[storage_index].next_equip_index = self.storage[storage_index].next_equip_index + 1;
         self.storage[storage_index].next_acquisition_sort_order_index = self.storage[storage_index].next_acquisition_sort_order_index + 1;
     }
 

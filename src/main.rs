@@ -7,12 +7,13 @@ mod write;
 mod ui;
 mod db;
 
-use std::{fs::File, io::Write, path::PathBuf};
+use std::{fs::{self, File}, io::Write, path::PathBuf};
 
-use eframe::{egui::{self, text::LayoutJob, Align, FontSelection, Id, LayerId, Layout, Order, RichText, Rounding, Style}, epaint::Color32};
+use eframe::{egui::{self, text::LayoutJob, Align, CornerRadius, FontSelection, Id, LayerId, Layout, Order, RichText, Style}, epaint::Color32};
 use rfd::FileDialog;
+use chrono::Local;
 use save::save::save::{Save, SaveType};
-use ui::{equipment::equipment::equipment, events::events::events, general::general::general, importer::import::character_importer, inventory::inventory::inventory::inventory, menu::menu::{menu, Route}, none::none::none, regions::regions::regions, stats::stats::stats};
+use ui::{equipment::equipment::equipment, events::events::events, general::general::general, importer::import::character_importer, inventory::inventory::inventory::inventory, menu::menu::{menu, Route}, none::none::none, regions::regions::regions, settings::settings::settings as settings_view, stats::stats::stats};
 use vm::{importer::general_view_model::ImporterViewModel, vm::vm::ViewModel};
 use crate::write::write::Write as w; 
 use rust_embed::RustEmbed;
@@ -50,10 +51,10 @@ fn main() -> Result<(), eframe::Error> {
         creation_context.egui_ctx.set_fonts(fonts);
         let mut visuals = creation_context.egui_ctx.style().visuals.clone();
         let rounding = 3.;
-        visuals.window_rounding = Rounding::default().at_least(rounding);
+        visuals.window_corner_radius = CornerRadius::default().at_least(rounding as u8);
         visuals.window_highlight_topmost = false;
         creation_context.egui_ctx.set_visuals(visuals);
-        Box::new(App::new(creation_context))
+        Ok(Box::new(App::new(creation_context)))
     }))
 }
 
@@ -64,17 +65,31 @@ pub struct App {
     current_route: Route,
     importer_vm: ImporterViewModel,
     importer_open: bool,
+    backup_folder: Option<PathBuf>,
+    settings_open: bool,
+    show_save_confirm: bool,
+    pending_save_path: Option<PathBuf>,
+    pending_backup_name: Option<String>,
+    save_error: Option<String>,
+    save_status: Option<String>,
 }
 
 impl App {
-    pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
+    pub fn new(cc: &eframe::CreationContext<'_>) -> Self {
         Self {
-            save: Save::default(), 
-            picked_path: Default::default(), 
+            save: Save::default(),
+            picked_path: Default::default(),
             current_route: Route::None,
             vm: ViewModel::default(),
             importer_vm: Default::default(),
-            importer_open: Default::default()
+            importer_open: Default::default(),
+            backup_folder: Self::load_backup_folder(cc),
+            settings_open: false,
+            show_save_confirm: false,
+            pending_save_path: None,
+            pending_backup_name: None,
+            save_error: None,
+            save_status: None,
         }
     }
 
@@ -86,41 +101,113 @@ impl App {
 
     fn save(&mut self, path: PathBuf) {
         self.vm.update_save(&mut self.save.save_type);
-        let mut f = File::create(path).expect("");
-        let bytes = self.save.write().expect("");
-        let res = f.write_all(&bytes);
-
-        match res {
-            Ok(_) => {},
-            Err(_) => todo!(),
+        match File::create(&path)
+            .and_then(|mut f| f.write_all(&self.save.write().expect("Failed to serialize save")))
+        {
+            Ok(_) => {
+                self.save_error = None;
+                self.save_status = Some(format!("Saved to {}", path.display()));
+            }
+            Err(e) => {
+                self.save_error = Some(format!("Failed to save file: {}", e));
+            }
         }
+    }
+
+    fn backup_current_file(&mut self) {
+        let Some(folder) = self.backup_folder.clone() else {
+            self.save_error = Some("Backup folder not set.".to_string());
+            return;
+        };
+        if !self.picked_path.exists() {
+            self.save_error = Some("Backup skipped: no source file loaded.".to_string());
+            return;
+        }
+        if let Err(e) = fs::create_dir_all(&folder) {
+            self.save_error = Some(format!("Failed to create backup folder: {}", e));
+            return;
+        }
+        let stem = self
+            .picked_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("save");
+        let backup_name = self
+            .pending_backup_name
+            .take()
+            .unwrap_or_else(|| format!("{}.{}", stem, Local::now().format("%Y-%m-%d_%H-%M-%S")));
+        let backup_path = folder.join(backup_name);
+        match fs::copy(&self.picked_path, &backup_path) {
+            Ok(_) => {
+                self.save_status = Some(format!("Backup created at {}", backup_path.display()));
+                self.save_error = None;
+            }
+            Err(e) => {
+                self.save_error = Some(format!("Failed to create backup: {}", e));
+            }
+        }
+    }
+
+    fn perform_pending_save(&mut self) {
+        let Some(path) = self.pending_save_path.take() else {
+            return;
+        };
+        self.backup_current_file();
+        if self.save_error.is_none() {
+            self.save(path);
+        }
+        self.show_save_confirm = false;
+    }
+
+    fn load_backup_folder(cc: &eframe::CreationContext<'_>) -> Option<PathBuf> {
+        cc.storage
+            .and_then(|s| s.get_string("backup_folder"))
+            .and_then(|s| PathBuf::from(s).canonicalize().ok())
     }
 
     fn open_file_dialog() -> Option<PathBuf> {
         FileDialog::new()
-        .add_filter("SL2", &["sl2", "Regular Save File"])
-        .add_filter("TXT", &["txt", "Save Wizard Exported TXT File"])
-        .add_filter("*", &["*", "All files"])
-        .set_directory("/")
-        .pick_file()
-    } 
+            .add_filter("SL2/DAT", &["sl2", "dat"])
+            .add_filter("SL2", &["sl2"])
+            .add_filter("DAT", &["dat"])
+            .add_filter("TXT", &["txt"])
+            .add_filter("*", &["*"])
+            .set_directory("/")
+            .pick_file()
+    }
 
-    fn save_file_dialog() -> Option<PathBuf> {
-        FileDialog::new()
-        .add_filter("SL2", &["sl2", "Regular Save File"])
-        .add_filter("TXT", &["txt", "Save Wizard Exported TXT File"])
-        .add_filter("*", &["*", "Any format"])
-        .set_directory("/")
-        .save_file()
-    } 
+    fn save_file_dialog(source: Option<&PathBuf>) -> Option<PathBuf> {
+        let mut dlg = FileDialog::new()
+            .add_filter("SL2/DAT", &["sl2", "dat"])
+            .add_filter("SL2", &["sl2"])
+            .add_filter("DAT", &["dat"])
+            .add_filter("TXT", &["txt"])
+            .add_filter("*", &["*"])
+            .set_directory("/");
+        if let Some(src) = source {
+            if let Some(name) = src.file_name().and_then(|n| n.to_str()) {
+                dlg = dlg.set_file_name(name);
+            }
+        }
+        dlg.save_file()
+    }
 }
 
 
 impl eframe::App for App {
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn save(&mut self, storage: &mut dyn eframe::Storage) {
+        if let Some(folder) = &self.backup_folder {
+            if let Some(path) = folder.to_str() {
+                storage.set_string("backup_folder", path.to_string());
+            }
+        }
+    }
+
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = ui.ctx();
         ctx.set_zoom_factor(1.75);
         // TOP PANEL
-        egui::TopBottomPanel::top("toolbar").default_height(35.).show(ctx, |ui| {
+        egui::Panel::top("toolbar").default_height(35.).show(ctx, |ui| {
             ui.columns(2, |uis|{
                 uis[0].with_layout(Layout::left_to_right(Align::Center),| ui| {
                     if ui.button(egui::RichText::new(format!("{} open", egui_phosphor::regular::FOLDER_OPEN))).clicked() {
@@ -131,11 +218,29 @@ impl eframe::App for App {
                         }
                     }
                     if ui.button(egui::RichText::new(format!("{} save", egui_phosphor::regular::FLOPPY_DISK))).clicked() {
-                        let files = Self::save_file_dialog();
-                        match files {
-                            Some(path) => self.save(path),
-                            None => {},
+                        if self.backup_folder.is_none() {
+                            self.save_error = Some(
+                                "Backup folder required. Open Settings to set one before saving."
+                                    .to_string(),
+                            );
+                        } else {
+                            let files = Self::save_file_dialog(Some(&self.picked_path));
+                            if let Some(path) = files {
+                                let stem = self
+                                    .picked_path
+                                    .file_name()
+                                    .and_then(|n| n.to_str())
+                                    .unwrap_or("save");
+                                let timestamp =
+                                    Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+                                self.pending_backup_name = Some(format!("{}.{}", stem, timestamp));
+                                self.pending_save_path = Some(path);
+                                self.show_save_confirm = true;
+                            }
                         }
+                    }
+                    if ui.button(egui::RichText::new(format!("{}", egui_phosphor::regular::GEAR))).clicked() {
+                        self.settings_open = true;
                     }
                 });
                 
@@ -163,7 +268,7 @@ impl eframe::App for App {
         });
 
         // TOP PANEL
-        egui::TopBottomPanel::top("top").show(ctx, |ui| {
+        egui::Panel::top("top").show(ctx, |ui| {
             if self.picked_path.exists() {
                 let save_type = match self.save.save_type {
                     SaveType::Unknown => {
@@ -190,11 +295,9 @@ impl eframe::App for App {
                                     SaveType::Unknown => {},
                                     SaveType::PC(_) => {
                                         let steam_id_text_edit = ui.add(steam_id_text_edit).labelled_by(ui.label("Steam Id:").id);
-                                        if steam_id_text_edit.hovered() {
-                                            egui::popup::show_tooltip(ui.ctx(), steam_id_text_edit.id, |ui|{
-                                                ui.label(egui::RichText::new("Important: This needs to match the id of the steam account that will use this save!").size(8.0).color(Color32::PLACEHOLDER));
-                                            });
-                                        }
+                                        steam_id_text_edit.on_hover_ui(|ui| {
+                                            ui.label(egui::RichText::new("Important: This needs to match the id of the steam account that will use this save!").size(8.0).color(Color32::PLACEHOLDER));
+                                        });
                                     },
                                     SaveType::PlayStation(_) => {},
                                 };
@@ -212,7 +315,7 @@ impl eframe::App for App {
 
         // Character List Panel
         if self.vm.active.is_some_and(|valid| valid) {
-            egui::SidePanel::left("characters").show(ctx, |ui| {
+            egui::Panel::left("characters").show(ctx, |ui| {
                 egui::ScrollArea::vertical()
                     .id_source("left")
                     .show(ui, |ui| {
@@ -229,7 +332,7 @@ impl eframe::App for App {
             });
 
             // Slot Section Panel
-            egui::SidePanel::left("slot_sections_menu").show(ctx, |ui| {
+            egui::Panel::left("slot_sections_menu").show(ctx, |ui| {
                 egui::ScrollArea::vertical() .id_source("left") .show(ui, |ui| {
                     ui.vertical(|ui| {
                         menu(ui, self);
@@ -307,6 +410,107 @@ impl eframe::App for App {
                     }
                 });
             });
+        }
+
+        // Save confirmation dialog
+        if self.show_save_confirm {
+            let mut open = true;
+            egui::Window::new("Confirm Save")
+                .open(&mut open)
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    ui.set_min_width(380.0);
+                    let dest = self
+                        .pending_save_path
+                        .as_ref()
+                        .map(|p| p.display().to_string())
+                        .unwrap_or_default();
+                    ui.label(format!("Save to: {}", dest));
+                    ui.add_space(6.0);
+
+                    match &self.backup_folder {
+                        Some(folder) => {
+                            let backup_name = self
+                                .pending_backup_name
+                                .clone()
+                                .unwrap_or_else(|| "save".to_string());
+                            let backup_path = folder.join(&backup_name);
+                            ui.label(
+                                RichText::new("A backup of the original file will be created:")
+                                    .color(Color32::from_rgb(220, 200, 120)),
+                            );
+                            ui.label(
+                                RichText::new(backup_path.display().to_string())
+                                    .color(Color32::from_rgb(120, 200, 120)),
+                            );
+                        }
+                        None => {
+                            ui.label(
+                                RichText::new("Backup folder not set. Open Settings to set one.")
+                                    .color(Color32::DARK_RED),
+                            );
+                        }
+                    }
+
+                    ui.add_space(10.0);
+                    let can_save = self.backup_folder.is_some();
+                    ui.horizontal(|ui| {
+                        if ui
+                            .add_enabled(can_save, egui::Button::new("OK"))
+                            .clicked()
+                        {
+                            self.perform_pending_save();
+                        }
+                        if ui.button("Cancel").clicked() {
+                            self.show_save_confirm = false;
+                            self.pending_save_path = None;
+                            self.pending_backup_name = None;
+                        }
+                    });
+                });
+            if !open {
+                self.show_save_confirm = false;
+                self.pending_save_path = None;
+                self.pending_backup_name = None;
+            }
+        }
+
+        // Settings window
+        if self.settings_open {
+            let mut open = true;
+            egui::Window::new("Settings")
+                .open(&mut open)
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
+                .show(ctx, |ui| {
+                    settings_view(ui, self);
+                });
+            if !open {
+                self.settings_open = false;
+            }
+        }
+
+        // Status / error toasts
+        if self.save_error.is_some() || self.save_status.is_some() {
+            egui::Window::new("Notice")
+                .collapsible(false)
+                .resizable(false)
+                .anchor(egui::Align2::CENTER_TOP, [0.0, 60.0])
+                .show(ctx, |ui| {
+                    if let Some(err) = &self.save_error {
+                        ui.label(RichText::new(err).color(Color32::DARK_RED));
+                    }
+                    if let Some(msg) = &self.save_status {
+                        ui.label(RichText::new(msg).color(Color32::from_rgb(120, 200, 120)));
+                    }
+                    if ui.button("Dismiss").clicked() {
+                        self.save_error = None;
+                        self.save_status = None;
+                    }
+                });
         }
     }
 }

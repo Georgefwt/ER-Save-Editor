@@ -91,7 +91,16 @@ pub mod events {
                             for grace in map.1 {
                                 let grace_info: (MapName, u32, &str) = GRACES.lock().unwrap()[&grace];
                                 let on = graces.get_mut(grace).expect("");
-                                ui.checkbox(on, grace_info.2.to_string());
+                                ui.vertical(|ui| {
+                                    ui.checkbox(on, grace_info.2.to_string());
+                                    if *on && grace.is_catacomb_like() {
+                                        ui.label(
+                                            egui::RichText::new("\u{26a0} Activating this grace undiscovered and teleporting in can softlock you - catacomb doors open only from the outside. Clear the boss first or do not teleport in.")
+                                                .color(egui::Color32::YELLOW)
+                                                .small()
+                                        );
+                                    }
+                                });
                             }
                         });
                     });

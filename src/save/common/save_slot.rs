@@ -102,15 +102,9 @@ impl Read for PlayerCoords {
         let mut player_coords = PlayerCoords::default();
         player_coords.player_coords = (br.read_f32()?, br.read_f32()?, br.read_f32()?);
         player_coords.map_id.copy_from_slice(br.read_bytes(4)?);
-        // Preserve unknown bytes between coordinate blocks.
-        player_coords
-            ._0x11
-            .copy_from_slice(br.read_bytes(0x11)?);
+        player_coords._0x11.copy_from_slice(br.read_bytes(0x11)?);
         player_coords.player_coords2 = (br.read_f32()?, br.read_f32()?, br.read_f32()?);
-        // Preserve trailing unknown bytes after the second coordinate block.
-        player_coords
-            ._0x10
-            .copy_from_slice(br.read_bytes(0x10)?);
+        player_coords._0x10.copy_from_slice(br.read_bytes(0x10)?);
         Ok(player_coords)
     }
 }
@@ -1547,6 +1541,8 @@ pub struct SaveSlot {
     pub player_coords: PlayerCoords,
     _game_man_unkown_values: [u8; 0xf],
     _0x1_2: u32,
+    temp_spawn_point_entity_id: u32,
+    game_man_0xcb3: u8,
     _cs_net_data_chunks: Vec<u8>,
     pub world_area_weather: WorldAreaWeather,
     pub world_area_time: WorldAreaTime,
@@ -1599,6 +1595,8 @@ impl Default for SaveSlot {
             player_coords: PlayerCoords::default(),
             _game_man_unkown_values: [0x0; 0xf],
             _0x1_2: 0,
+            temp_spawn_point_entity_id: 0,
+            game_man_0xcb3: 0,
             _cs_net_data_chunks: vec![0x0; 0x20000],
             world_area_weather: WorldAreaWeather::default(),
             world_area_time: WorldAreaTime::default(),
@@ -1736,6 +1734,16 @@ impl Read for SaveSlot {
         // Value should always be 2 for active accounts. 0 for empty ones.
         assert!(save_slot._0x1_2 == 2 || save_slot._0x1_2 == 0);
 
+        // Fields only present in save version 65 and later
+        if save_slot.ver >= 65 {
+            save_slot.temp_spawn_point_entity_id = br.read_u32()?;
+        }
+
+        // Field only present in save version 66 and later
+        if save_slot.ver >= 66 {
+            save_slot.game_man_0xcb3 = br.read_u8()?;
+        }
+
         save_slot
             ._cs_net_data_chunks
             .copy_from_slice(br.read_bytes(0x20000)?);
@@ -1757,7 +1765,8 @@ impl Read for SaveSlot {
 
         save_slot._0x80.copy_from_slice(br.read_bytes(0x80)?);
 
-        save_slot._rest.extend(br.read_bytes(end - br.pos)?);
+        let rest_size = end - br.pos;
+        save_slot._rest.extend(br.read_bytes(rest_size)?);
 
         Ok(save_slot)
     }
@@ -1871,6 +1880,16 @@ impl Write for SaveSlot {
 
         bytes.extend(self._0x1_2.to_le_bytes());
 
+        // Fields only present in save version 65 and later
+        if self.ver >= 65 {
+            bytes.extend(self.temp_spawn_point_entity_id.to_le_bytes());
+        }
+
+        // Field only present in save version 66 and later
+        if self.ver >= 66 {
+            bytes.push(self.game_man_0xcb3);
+        }
+
         // CSNetMan
         bytes.extend(self._cs_net_data_chunks.to_vec());
 
@@ -1892,6 +1911,9 @@ impl Write for SaveSlot {
         bytes.extend(self._cs_dlc);
 
         bytes.extend(self._0x80);
+
+        // Write trailing/rest data read from the original save
+        bytes.extend(self._rest.to_vec());
 
         // Empty calories
         bytes.extend(vec![0; 0x280000 - bytes.len()]);

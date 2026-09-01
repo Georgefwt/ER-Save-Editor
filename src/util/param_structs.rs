@@ -5023,6 +5023,30 @@ impl EQUIP_PARAM_GEM_ST {
 	pub fn canMountWep_Torch(&self) -> bool {	
 			self.bits_9 & (1 << 3) != 0
 	}
+	pub fn canMountWep_HandToHand(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 0) != 0
+	}
+	pub fn canMountWep_ThrustingShield(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 1) != 0
+	}
+	pub fn canMountWep_ThrowingWeapon(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 2) != 0
+	}
+	pub fn canMountWep_ReverseHandSword(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 3) != 0
+	}
+	pub fn canMountWep_LightGreatsword(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 4) != 0
+	}
+	pub fn canMountWep_GreatKatana(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 5) != 0
+	}
+	pub fn canMountWep_BeastClaw(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 6) != 0
+	}
+	pub fn canMountWep_PerfumeBottle(&self) -> bool {	
+			self.reserved2_canMountWep[0] & (1 << 7) != 0
+	}
 	pub fn reserved_canMountWep(&self) -> bool {	
 			self.bits_9 & (1 << 4) != 0
 	}

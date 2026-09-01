@@ -318,6 +318,47 @@ pub mod regions {
         ScaduviewHinterland,
     }
 
+    impl Region {
+        /// Regions whose grace, when activated undiscovered and teleported to, can softlock
+        /// the player because the dungeon entrance opens only from the outside. Covers
+        /// catacombs, hero's graves, gaols, and the Hidden Path to the Haligtree.
+        /// Source for the softlock pattern: Elden-Ring-CT-TGA Event Flag Manager comments.
+        pub fn is_catacomb_like(&self) -> bool {
+            matches!(self,
+                Region::StormfootCatacombs
+                | Region::MurkwaterCatacombs
+                | Region::TombswardCatacombs
+                | Region::ImpalersCatacombs
+                | Region::BlackKnifeCatacombs
+                | Region::CliffbottomCatacombs
+                | Region::RoadsEndCatacombs
+                | Region::DeathtouchedCatacombs
+                | Region::WyndhamCatacombs
+                | Region::SaintedHerosGrave
+                | Region::GelmirHerosGrave
+                | Region::AurizaHerosGrave
+                | Region::GiantConqueringHerosGrave
+                | Region::UnsightlyCatacombs
+                | Region::AurizaSideTomb
+                | Region::MinorErdtreeCatacombs
+                | Region::CaelidCatacombs
+                | Region::WarDeadCatacombs
+                | Region::LeyndellCatacombs
+                | Region::LeyndellCatacombsPartII
+                | Region::GiantsMountaintopCatacombs
+                | Region::ConsecratedSnowfieldCatacombs
+                | Region::HiddenPathtotheHaligtree
+                | Region::HiddenPathtotheHaligtreePartII
+                | Region::FogRiftCatacombs
+                | Region::ScorpionRiverCatacombs
+                | Region::DarklightCatacombs
+                | Region::BeluratGaol
+                | Region::BonnyGaol
+                | Region::LamentersGaol
+            )
+        }
+    }
+
     pub static ID_TO_REGION: Lazy<Mutex<HashMap<u32,Region>>> = Lazy::new(|| {
         Mutex::new(HashMap::from([
             (6100090,Region::ChurchofDragonCommunion),

@@ -491,7 +491,45 @@ pub mod maps {
         ShadowKeepBackGate,
         ScaduviewHinterland
     }
-    
+
+    impl Grace {
+        /// Graces whose activation undiscovered + teleport-in can softlock the player
+        /// because the dungeon entrance opens only from the outside. Covers catacombs,
+        /// hero's graves, gaols, and the Hidden Path to the Haligtree.
+        /// Source for the softlock pattern: Elden-Ring-CT-TGA Event Flag Manager comments.
+        pub fn is_catacomb_like(&self) -> bool {
+            matches!(self,
+                Grace::MurkwaterCatacombs
+                | Grace::StormfootCatacombs
+                | Grace::DeathtouchedCatacombs
+                | Grace::ImpalersCatacombs
+                | Grace::TombswardCatacombs
+                | Grace::BlackKnifeCatacombs
+                | Grace::CliffbottomCatacombs
+                | Grace::RoadsEndCatacombs
+                | Grace::SaintedHerosGrave
+                | Grace::UnsightlyCatacombs
+                | Grace::GelmirHerosGrave
+                | Grace::WyndhamCatacombs
+                | Grace::AuziraHerosGrave
+                | Grace::LeyndellCatacombs
+                | Grace::CaelidCatacombs
+                | Grace::MinorEerdtreeCatacombs
+                | Grace::WarDeadCatacombs
+                | Grace::HiddenPathtotheHaligtree
+                | Grace::GiantConqueringHerosGrave
+                | Grace::GiantsMountaintopCatacombs
+                | Grace::ConsecratedSnowfieldCatacombs
+                | Grace::FogRiftCatacombs
+                | Grace::BeluratGaol
+                | Grace::LamentersGaol
+                | Grace::ScorpionRiverCatacombs
+                | Grace::DarklightCatacombs
+                | Grace::BonnyGaol
+            )
+        }
+    }
+
     pub static GRACES: Lazy<Mutex<HashMap<Grace, (MapName, u32, &str)>>> = Lazy::new(|| {
         Mutex::new(HashMap::from([
             // Table of Lost Grace / Roundtable Hold

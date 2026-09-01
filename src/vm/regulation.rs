@@ -68,6 +68,13 @@ pub mod regulation_view_model {
         Bolt = 85,
         BallistaBolt = 86,
         Torch = 87,
+        HandToHand = 88,
+        ThrustingShield = 90,
+        ThrowingWeapon = 91,
+        ReverseHandSword = 92,
+        LightGreatsword = 93,
+        GreatKatana = 94,
+        BeastClaw = 95,
         Unknown = 99
     }
     impl From<i16> for WepType {
@@ -112,6 +119,13 @@ pub mod regulation_view_model {
                 85 => WepType::Bolt, 
                 86 => WepType::BallistaBolt, 
                 87 => WepType::Torch, 
+                88 => WepType::HandToHand,
+                90 => WepType::ThrustingShield,
+                91 => WepType::ThrowingWeapon,
+                92 => WepType::ReverseHandSword,
+                93 => WepType::LightGreatsword,
+                94 => WepType::GreatKatana,
+                95 => WepType::BeastClaw,
                 _ => WepType::Unknown
             }
         }
@@ -377,6 +391,27 @@ pub mod regulation_view_model {
                     WepType::Torch => {
                         gem.data.canMountWep_Torch()
                     },
+                    WepType::HandToHand => {
+                        gem.data.canMountWep_HandToHand()
+                    },
+                    WepType::ThrustingShield => {
+                        gem.data.canMountWep_ThrustingShield()
+                    },
+                    WepType::ThrowingWeapon => {
+                        gem.data.canMountWep_ThrowingWeapon()
+                    },
+                    WepType::ReverseHandSword => {
+                        gem.data.canMountWep_ReverseHandSword()
+                    },
+                    WepType::LightGreatsword => {
+                        gem.data.canMountWep_LightGreatsword()
+                    },
+                    WepType::GreatKatana => {
+                        gem.data.canMountWep_GreatKatana()
+                    },
+                    WepType::BeastClaw => {
+                        gem.data.canMountWep_BeastClaw()
+                    },
                     WepType::None |
                     WepType::Arrow |
                     WepType::Greatarrow |
@@ -470,7 +505,8 @@ pub mod regulation_view_model {
                     .filter(|reg_item_vm|
                         reg_item_vm.id > 9100 || reg_item_vm.id < 9000
                     )
-                    .collect::<Vec<RegulationItemViewModel>>(); 
+                    .filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_"))
+                    .collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_goods.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -508,7 +544,7 @@ pub mod regulation_view_model {
                         distance > 0.3 
                     }).filter(|i|{
                         i.id % 10_000 == 0
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_weapons.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -537,7 +573,7 @@ pub mod regulation_view_model {
                         distance > 0.3 
                     }).filter(|reg_item_vm|{
                         reg_item_vm.id > 40000
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_protectors.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -566,7 +602,7 @@ pub mod regulation_view_model {
                         distance > 0.3 
                     }).filter(|reg_item_vm|{
                         reg_item_vm.id > 10000
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_gems.sort_by(|a,b| {
                         if filter_text.is_empty() {
@@ -593,7 +629,7 @@ pub mod regulation_view_model {
                         if filter_text.is_empty() { return true; }
                         let distance = sorensen_dice(&reg_item_vm.name.to_lowercase(), &filter_text.to_lowercase());
                         distance > 0.3 
-                    }).collect::<Vec<RegulationItemViewModel>>();
+                    }).filter(|reg_item_vm| !reg_item_vm.name.starts_with("[UNKNOWN_")).collect::<Vec<RegulationItemViewModel>>();
 
                     self.filtered_accessories.sort_by(|a,b| {
                         if filter_text.is_empty() {

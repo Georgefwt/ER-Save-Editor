@@ -89,7 +89,14 @@ pub mod events_view_model {
 
             // Summoning Pools
             for (key, value) in SUMMONING_POOLS.lock().unwrap().iter() {
-                let event_flag_info = id_to_offset_lookup[&value.0];
+                // Safety net:  but guard against a future DB addition without a matching offset instead of panicking.
+                let event_flag_info = match id_to_offset_lookup.get(&value.0) {
+                    Some(info) => info,
+                    None => {
+                        events_vm.summoning_pools.insert(*key, false);
+                        continue;
+                    }
+                };
                 let on = get_bit(slot.event_flags.flags[event_flag_info.0 as usize], event_flag_info.1);
                 events_vm.summoning_pools.insert(*key, on);
             }

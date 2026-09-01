@@ -210,6 +210,13 @@ pub mod validator {
                 WepType::MediumShield => gem_param.data.canMountWep_ShieldNormal(),
                 WepType::Greatshield => gem_param.data.canMountWep_ShieldLarge(),
                 WepType::Torch => gem_param.data.canMountWep_Torch(),
+                WepType::HandToHand => gem_param.data.canMountWep_HandToHand(),
+                WepType::ThrustingShield => gem_param.data.canMountWep_ThrustingShield(),
+                WepType::ThrowingWeapon => gem_param.data.canMountWep_ThrowingWeapon(),
+                WepType::ReverseHandSword => gem_param.data.canMountWep_ReverseHandSword(),
+                WepType::LightGreatsword => gem_param.data.canMountWep_LightGreatsword(),
+                WepType::GreatKatana => gem_param.data.canMountWep_GreatKatana(),
+                WepType::BeastClaw => gem_param.data.canMountWep_BeastClaw(),
                 WepType::None |
                 WepType::Arrow |
                 WepType::Greatarrow |

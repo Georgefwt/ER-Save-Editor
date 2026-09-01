@@ -46,7 +46,16 @@ pub mod regions {
                             for region in map.1 {
                                 let region_info = REGIONS.lock().unwrap()[&region];
                                 let on = &mut regions.get_mut(region).expect("").0;
-                                ui.checkbox(on, region_info.1.to_string());
+                                ui.vertical(|ui| {
+                                    ui.checkbox(on, region_info.1.to_string());
+                                    if *on && region.is_catacomb_like() {
+                                        ui.label(
+                                            egui::RichText::new("\u{26a0} Activating this grace undiscovered and teleporting in can softlock you - catacomb doors open only from the outside. Clear the boss first or do not teleport in.")
+                                                .color(egui::Color32::YELLOW)
+                                                .small()
+                                        );
+                                    }
+                                });
                             }
                         });
                     })
